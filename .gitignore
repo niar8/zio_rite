@@ -39,3 +39,9 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Node ###
+node_modules/
+.parcel-cache
+modules/app/dist
+package-lock.json
