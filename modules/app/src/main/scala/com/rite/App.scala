@@ -6,6 +6,9 @@ import org.scalajs.dom
 object App {
   def main(args: Array[String]): Unit = {
     val containerNode = dom.document.querySelector("#app")
-    render(containerNode, div("Content from Laminar"))
+    render(
+      containerNode,
+      Tutorial.clicksVar
+    )
   }
 }
