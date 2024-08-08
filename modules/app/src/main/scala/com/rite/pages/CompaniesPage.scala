@@ -1,33 +1,27 @@
 package com.rite.pages
 
-import com.raquo.laminar.api.L.{*, given}
-import com.raquo.laminar.nodes.ReactiveHtmlElement
-import com.rite.common.*
-import frontroute.*
-import org.scalajs.dom
-import org.scalajs.dom.{HTMLDivElement, HTMLElement}
-import com.rite.components.*
-import com.rite.domain.data.*
-
 import scala.scalajs.js.annotation.*
 import scala.scalajs.js
 
+import com.raquo.laminar.api.L.{*, given}
+import com.raquo.laminar.nodes.ReactiveHtmlElement
+import frontroute.*
+import org.scalajs.dom
+import org.scalajs.dom.{HTMLDivElement, HTMLElement}
+import sttp.client3.UriContext
+import sttp.client3.impl.zio.FetchZioBackend
+import sttp.tapir.client.sttp.SttpClientInterpreter
+import zio.*
+
+import com.rite.common.*
+import com.rite.components.*
+import com.rite.domain.data.*
+import com.rite.http.endpoints.CompanyEndpoints
+
 object CompaniesPage {
-
-  private val dummyCompany = Company(
-    1L,
-    "simple-company",
-    "Simple company",
-    "http://dummy.com",
-    Some("Anywhere"),
-    Some("On Mars"),
-    Some("space travel"),
-    None,
-    List("space", "scala")
-  )
-
   def apply(): ReactiveHtmlElement[HTMLElement] =
     sectionTag(
+      onMountCallback(_ => performBackendCall()),
       cls := "section-1",
       div(
         cls := "container company-list-hero",
@@ -46,12 +40,44 @@ object CompaniesPage {
           ),
           div(
             cls := "col-lg-8",
-            renderCompany(dummyCompany),
-            renderCompany(dummyCompany)
+            children <-- companiesBus.events.map(_.map(renderCompany))
           )
         )
       )
     )
+
+  private val dummyCompany = Company(
+    1L,
+    "simple-company",
+    "Simple company",
+    "http://dummy.com",
+    Some("Anywhere"),
+    Some("On Mars"),
+    Some("space travel"),
+    None,
+    List("space", "scala")
+  )
+
+  private val companiesBus: EventBus[List[Company]] = EventBus[List[Company]]()
+
+  private def performBackendCall(): Unit = {
+    val companyEndpoints                   = new CompanyEndpoints {}
+    val theEndpoint                        = companyEndpoints.getAllEndpoint
+    val backend                            = FetchZioBackend()
+    val interpreter: SttpClientInterpreter = SttpClientInterpreter()
+    val request = interpreter
+      .toRequestThrowDecodeFailures(
+        theEndpoint,
+        Some(uri"http://localhost:8080")
+      )
+      .apply(())
+    val companiesZIO: Task[List[Company]] = backend.send(request).map(_.body).absolve
+    Unsafe.unsafe { implicit unsafe =>
+      Runtime.default.unsafe.fork(
+        companiesZIO.tap(list => ZIO.attempt(companiesBus.emit(list)))
+      )
+    }
+  }
 
   private def renderCompany(company: Company) =
     div(
