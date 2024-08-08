@@ -3,11 +3,9 @@ package com.rite.components
 import com.raquo.laminar.api.L.{*, given}
 import com.raquo.laminar.codecs.StringAsIsCodec
 import com.raquo.laminar.nodes.ReactiveHtmlElement
+import com.rite.common.*
 import org.scalajs.dom
 import org.scalajs.dom.{HTMLAnchorElement, HTMLDivElement, HTMLLIElement}
-
-import scala.scalajs.js.annotation.*
-import scala.scalajs.js
 
 object Header {
   def apply(): ReactiveHtmlElement[HTMLDivElement] =
@@ -46,17 +44,13 @@ object Header {
       )
     )
 
-  @js.native
-  @JSImport("/static/img/fiery-lava 128x128.png", JSImport.Default)
-  private val logoImage: String = js.native
-
   private def renderLogo() =
     a(
       href := "/",
       cls  := "navbar-brand",
       img(
         cls := "home-logo",
-        src := logoImage,
+        src := Constants.logoImage,
         alt := "Rock the JVM"
       )
     )
@@ -73,17 +67,4 @@ object Header {
       cls := "nav-item",
       Anchors.renderNavLink(text, location, cssClass = "nav-link jvm-item")
     )
-
-  object Anchors {
-    def renderNavLink(
-        text: String,
-        location: String,
-        cssClass: String = ""
-    ): ReactiveHtmlElement[HTMLAnchorElement] =
-      a(
-        href := location,
-        cls  := cssClass,
-        text
-      )
-  }
 }
