@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS companies(
     tags TEXT[]
 );
 
+INSERT INTO companies (slug, name, url, location, country, industry, tags)
+VALUES  ('rock-the-jvm', 'Rock the JVM', 'rockthejvm.com', 'Bucharest', 'Romania', 'courses', '{"scala", "zio"}'),
+        ('google', 'Google', 'google.com', 'Mountain View', 'USA', 'internet', '{"search", "tech"}');
+
 CREATE TABLE IF NOT EXISTS users(
     id BIGSERIAL PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,

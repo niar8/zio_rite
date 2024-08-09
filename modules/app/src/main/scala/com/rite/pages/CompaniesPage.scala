@@ -27,7 +27,7 @@ object CompaniesPage {
           cls := "row jvm-recent-companies-body",
           div(
             cls := "col-lg-4",
-            div("TODO filter panel here")
+            FilterPanel()
           ),
           div(
             cls := "col-lg-8",

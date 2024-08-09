@@ -29,8 +29,14 @@ class CompanyController private (
   val getAll: ServerEndpoint[Any, Task] =
     getAllEndpoint.serverLogic(_ => companyService.getAll.either)
 
+  val getAllFilters: ServerEndpoint[Any, Task] =
+    getAllFiltersEndpoint.serverLogic { _ =>
+      companyService.getAllFilters.either
+    }
+
+  // 'getAllFilters' must be processed before 'getById' to avoid path shadowing
   override val routes: List[ServerEndpoint[Any, Task]] =
-    List(create, getById, getAll)
+    List(create, getAllFilters, getById, getAll)
 }
 
 object CompanyController {

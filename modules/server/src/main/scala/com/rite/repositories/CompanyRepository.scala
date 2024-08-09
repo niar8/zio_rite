@@ -1,12 +1,13 @@
 package com.rite.repositories
 
-import com.rite.domain.data.Company
+import com.rite.domain.data.*
 import zio.*
 import io.getquill.*
 import io.getquill.jdbczio.Quill
 
 trait CompanyRepository extends Repository[Company] {
   def getBySlug(slug: String): Task[Option[Company]]
+  def uniqueAttributes: Task[CompanyFilter]
 }
 
 class CompanyRepositoryLive private (quill: Quill.Postgres[SnakeCase]) extends CompanyRepository {
@@ -31,11 +32,6 @@ class CompanyRepositoryLive private (quill: Quill.Postgres[SnakeCase]) extends C
   override def getAll: Task[List[Company]] =
     run(query[Company])
 
-  override def getBySlug(slug: String): Task[Option[Company]] =
-    run {
-      query[Company].filter(_.slug == lift(slug))
-    }.map(_.headOption)
-
   override def update(id: Long, op: Company => Company): Task[Company] =
     for {
       current <- getById(id).someOrFail(new RuntimeException(s"Couldn't update: missing id $id"))
@@ -54,6 +50,19 @@ class CompanyRepositoryLive private (quill: Quill.Postgres[SnakeCase]) extends C
         .delete
         .returning(c => c)
     }
+
+  override def getBySlug(slug: String): Task[Option[Company]] =
+    run {
+      query[Company].filter(_.slug == lift(slug))
+    }.map(_.headOption)
+
+  override def uniqueAttributes: Task[CompanyFilter] =
+    for {
+      locations  <- run(query[Company].map(_.location).distinct).map(_.flatMap(_.toList))
+      countries  <- run(query[Company].map(_.country).distinct).map(_.flatMap(_.toList))
+      industries <- run(query[Company].map(_.industry).distinct).map(_.flatMap(_.toList))
+      tags       <- run(query[Company].map(_.tags)).map(_.flatten.toSet.toList)
+    } yield CompanyFilter(locations, countries, industries, tags)
 }
 
 object CompanyRepositoryLive {
