@@ -1,22 +1,13 @@
 package com.rite.pages
 
-import scala.scalajs.js.annotation.*
-import scala.scalajs.js
-
 import com.raquo.laminar.api.L.{*, given}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import frontroute.*
-import org.scalajs.dom
-import org.scalajs.dom.{HTMLDivElement, HTMLElement}
-import sttp.client3.UriContext
-import sttp.client3.impl.zio.FetchZioBackend
-import sttp.tapir.client.sttp.SttpClientInterpreter
-import zio.*
-
 import com.rite.common.*
 import com.rite.components.*
+import com.rite.core.ZJS.*
 import com.rite.domain.data.*
-import com.rite.http.endpoints.CompanyEndpoints
+import org.scalajs.dom
+import org.scalajs.dom.{HTMLDivElement, HTMLElement}
 
 object CompaniesPage {
   def apply(): ReactiveHtmlElement[HTMLElement] =
@@ -60,24 +51,8 @@ object CompaniesPage {
 
   private val companiesBus: EventBus[List[Company]] = EventBus[List[Company]]()
 
-  private def performBackendCall(): Unit = {
-    val companyEndpoints                   = new CompanyEndpoints {}
-    val theEndpoint                        = companyEndpoints.getAllEndpoint
-    val backend                            = FetchZioBackend()
-    val interpreter: SttpClientInterpreter = SttpClientInterpreter()
-    val request = interpreter
-      .toRequestThrowDecodeFailures(
-        theEndpoint,
-        Some(uri"http://localhost:8080")
-      )
-      .apply(())
-    val companiesZIO: Task[List[Company]] = backend.send(request).map(_.body).absolve
-    Unsafe.unsafe { implicit unsafe =>
-      Runtime.default.unsafe.fork(
-        companiesZIO.tap(list => ZIO.attempt(companiesBus.emit(list)))
-      )
-    }
-  }
+  private def performBackendCall(): Unit =
+    useBackend(_.company.getAllEndpoint(payload = ())).emitTo(companiesBus)
 
   private def renderCompany(company: Company) =
     div(
