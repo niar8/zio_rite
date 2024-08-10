@@ -3,6 +3,8 @@ package com.rite.components
 import com.raquo.laminar.api.L.{*, given}
 import com.raquo.laminar.codecs.StringAsIsCodec
 import com.raquo.laminar.nodes.ReactiveHtmlElement
+import com.rite.core.ZJS.*
+import com.rite.domain.data.CompanyFilter
 import org.scalajs.dom.HTMLDivElement
 import sttp.client3.*
 import org.scalajs.dom
@@ -19,8 +21,20 @@ import zio.*
  */
 
 object FilterPanel {
+  private val GROUP_LOCATIONS  = "Locations"
+  private val GROUP_COUNTRIES  = "Countries"
+  private val GROUP_INDUSTRIES = "Industries"
+  private val GROUP_TAGS       = "Tags"
+
+  private val possibleFilter = Var[CompanyFilter](CompanyFilter.empty)
+
   def apply(): ReactiveHtmlElement[HTMLDivElement] =
     div(
+      onMountCallback { _ =>
+        useBackend(_.company.getAllFiltersEndpoint(payload = ()))
+          .map(possibleFilter.set)
+          .runJs
+      },
       cls    := "accordion accordion-flush",
       idAttr := "accordionFlushExample",
       div(
@@ -52,10 +66,10 @@ object FilterPanel {
           htmlAttr("data-bs-parent", StringAsIsCodec)  := "#accordionFlushExample",
           div(
             cls := "accordion-body p-0",
-            renderFilterOptions("Locations", List("London", "Paris")),
-            renderFilterOptions("Countries", List("UK", "France")),
-            renderFilterOptions("Industries", List("Banking", "Aviation")),
-            renderFilterOptions("Tags", List("Scala", "ZIO", "Typelevel")),
+            renderFilterOptions(GROUP_LOCATIONS, _.locations),
+            renderFilterOptions(GROUP_COUNTRIES, _.countries),
+            renderFilterOptions(GROUP_INDUSTRIES, _.industries),
+            renderFilterOptions(GROUP_TAGS, _.tags),
             div(
               cls := "jvm-accordion-search-btn",
               button(
@@ -69,9 +83,9 @@ object FilterPanel {
       )
     )
 
-  def renderFilterOptions(
+  private def renderFilterOptions(
       groupName: String,
-      options: List[String]
+      optionsFn: CompanyFilter => List[String]
   ): ReactiveHtmlElement[HTMLDivElement] =
     div(
       cls := "accordion-item",
@@ -97,23 +111,26 @@ object FilterPanel {
           cls := "accordion-body",
           div(
             cls := "mb-3",
-            options.map { value =>
-              div(
-                cls := "form-check",
-                label(
-                  cls   := "form-check-label",
-                  forId := s"filter-$groupName-$value",
-                  value
-                ),
-                input(
-                  cls    := "form-check-input",
-                  `type` := "checkbox",
-                  idAttr := s"filter-$groupName-$value"
-                )
-              )
+            children <-- possibleFilter.signal.map {
+              optionsFn(_).map(renderCheckbox(groupName, _))
             }
           )
         )
+      )
+    )
+
+  private def renderCheckbox(groupName: String, value: String) =
+    div(
+      cls := "form-check",
+      label(
+        cls   := "form-check-label",
+        forId := s"filter-$groupName-$value",
+        value
+      ),
+      input(
+        cls    := "form-check-input",
+        `type` := "checkbox",
+        idAttr := s"filter-$groupName-$value"
       )
     )
 }
