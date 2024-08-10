@@ -21,12 +21,42 @@ import zio.*
  */
 
 object FilterPanel {
+  private final case class CheckValueEvent(groupName: String, value: String, checked: Boolean)
+
   private val GROUP_LOCATIONS  = "Locations"
   private val GROUP_COUNTRIES  = "Countries"
   private val GROUP_INDUSTRIES = "Industries"
   private val GROUP_TAGS       = "Tags"
 
   private val possibleFilter = Var[CompanyFilter](CompanyFilter.empty)
+  private val checkEvents    = EventBus[CheckValueEvent]()
+
+  // clicks on the "apply filters" button
+  private val clicks = EventBus[Unit]()
+
+  // emit either true or false depending to show "apply" or not
+  private val dirty = clicks.events.mapTo(false).mergeWith(clicks.events.mapTo(true))
+
+  private val state: Signal[CompanyFilter] =
+    checkEvents.events
+      .scanLeft(Map.empty[String, Set[String]]) { (currentMap, event) =>
+        event match {
+          case CheckValueEvent(groupName, value, checked) =>
+            val currentSet = currentMap.getOrElse(groupName, Set.empty)
+            if (checked)
+              currentMap + (groupName -> (currentSet + value))
+            else
+              currentMap + (groupName -> (currentSet - value))
+        }
+      }
+      .map { checkMap =>
+        CompanyFilter(
+          locations = checkMap.getOrElse(GROUP_LOCATIONS, Set.empty).toList,
+          countries = checkMap.getOrElse(GROUP_COUNTRIES, Set.empty).toList,
+          industries = checkMap.getOrElse(GROUP_INDUSTRIES, Set.empty).toList,
+          tags = checkMap.getOrElse(GROUP_TAGS, Set.empty).toList
+        )
+      }
 
   def apply(): ReactiveHtmlElement[HTMLDivElement] =
     div(
@@ -70,14 +100,7 @@ object FilterPanel {
             renderFilterOptions(GROUP_COUNTRIES, _.countries),
             renderFilterOptions(GROUP_INDUSTRIES, _.industries),
             renderFilterOptions(GROUP_TAGS, _.tags),
-            div(
-              cls := "jvm-accordion-search-btn",
-              button(
-                cls    := "btn btn-primary",
-                `type` := "button",
-                "Apply Filters"
-              )
-            )
+            renderApplyFiltersButton()
           )
         )
       )
@@ -130,7 +153,20 @@ object FilterPanel {
       input(
         cls    := "form-check-input",
         `type` := "checkbox",
-        idAttr := s"filter-$groupName-$value"
+        idAttr := s"filter-$groupName-$value",
+        onChange.mapToChecked.map(CheckValueEvent(groupName, value, _)) --> checkEvents
+      )
+    )
+
+  private def renderApplyFiltersButton() =
+    div(
+      cls := "jvm-accordion-search-btn",
+      button(
+        disabled <-- dirty.toSignal(false).map(v => !v),
+        onClick.mapTo(()) --> clicks,
+        cls    := "btn btn-primary",
+        `type` := "button",
+        "Apply Filters"
       )
     )
 }
