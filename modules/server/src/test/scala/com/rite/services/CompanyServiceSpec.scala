@@ -1,6 +1,6 @@
 package com.rite.services
 
-import com.rite.domain.data.Company
+import com.rite.domain.data.{Company, CompanyFilter}
 import com.rite.http.requests.CreateCompanyRequest
 import com.rite.repositories.CompanyRepository
 import com.rite.services.{CompanyService, CompanyServiceLive}
@@ -45,6 +45,24 @@ object CompanyServiceSpec extends ZIOSpecDefault {
         ZIO.succeed(db.values.toList)
       override def getBySlug(slug: String): Task[Option[Company]] =
         ZIO.succeed(db.values.find(_.slug == slug))
+      override def uniqueAttributes: Task[CompanyFilter] =
+        ZIO.succeed {
+          val companies  = db.values
+          val locations  = companies.flatMap(_.location.toList).toSet.toList
+          val countries  = companies.flatMap(_.country.toList).toSet.toList
+          val industries = companies.flatMap(_.industry.toList).toSet.toList
+          val tags       = companies.flatMap(_.tags).toSet.toList
+          CompanyFilter(locations, countries, industries, tags)
+        }
+      override def searchByFilter(filter: CompanyFilter): Task[List[Company]] =
+        ZIO.succeed {
+          db.values.toList.filter { company =>
+            filter.locations.isEmpty || filter.locations.contains(company.location) ||
+            filter.countries.isEmpty || filter.countries.contains(company.country) ||
+            filter.industries.isEmpty || filter.industries.contains(company.industry) ||
+            filter.tags.toSet.intersect(company.tags.toSet).nonEmpty
+          }
+        }
     }
   }
 

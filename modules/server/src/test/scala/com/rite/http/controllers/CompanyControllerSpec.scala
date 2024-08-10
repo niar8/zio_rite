@@ -11,7 +11,7 @@ import zio.*
 import zio.test.*
 import zio.json.*
 import com.rite.syntax.*
-import com.rite.domain.data.{Company, User, UserId, UserToken}
+import com.rite.domain.data.*
 import com.rite.http.requests.CreateCompanyRequest
 import com.rite.services.{CompanyService, JWTService}
 
@@ -30,6 +30,10 @@ object CompanyControllerSpec extends ZIOSpecDefault {
       ZIO.succeed(List(testCompany))
     override def getBySlug(slug: String): Task[Option[Company]] =
       ZIO.succeed { if (slug == testCompany.slug) Some(testCompany) else None }
+    override def getAllFilters: Task[CompanyFilter] =
+      ZIO.succeed(CompanyFilter.empty)
+    override def searchByFilter(filter: CompanyFilter): Task[List[Company]] =
+      ZIO.succeed(List(testCompany))
   }
 
   private val jwtServiceStub = new JWTService {

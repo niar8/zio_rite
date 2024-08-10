@@ -18,6 +18,12 @@ object ZJS {
         )
       }
 
+    def toEventStream: EventStream[A] = {
+      val eventBus = EventBus[A]()
+      emitTo(eventBus)
+      eventBus.events
+    }
+
     def runJs: CancelableFuture[A] =
       Unsafe.unsafe { implicit unsafe =>
         Runtime.default.unsafe.runToFuture(

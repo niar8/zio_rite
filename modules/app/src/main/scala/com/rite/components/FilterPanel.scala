@@ -20,7 +20,7 @@ import zio.*
  *    b. refetch companies when user clicks the filter
  */
 
-object FilterPanel {
+class FilterPanel {
   private final case class CheckValueEvent(groupName: String, value: String, checked: Boolean)
 
   private val GROUP_LOCATIONS  = "Locations"
@@ -57,6 +57,9 @@ object FilterPanel {
           tags = checkMap.getOrElse(GROUP_TAGS, Set.empty).toList
         )
       }
+
+  // informs CompaniesPage to re-render content
+  val triggerFilters: EventStream[CompanyFilter] = clicks.events.withCurrentValueOf(state)
 
   def apply(): ReactiveHtmlElement[HTMLDivElement] =
     div(
@@ -162,7 +165,7 @@ object FilterPanel {
     div(
       cls := "jvm-accordion-search-btn",
       button(
-        disabled <-- dirty.toSignal(false).map(v => !v),
+        disabled <-- dirty.toSignal(true).map(v => !v), // todo must be '...toSignal(false)...'
         onClick.mapTo(()) --> clicks,
         cls    := "btn btn-primary",
         `type` := "button",

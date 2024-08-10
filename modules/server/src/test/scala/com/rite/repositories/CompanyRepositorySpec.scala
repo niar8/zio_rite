@@ -1,6 +1,6 @@
 package com.rite.repositories
 
-import com.rite.domain.data.Company
+import com.rite.domain.data.{Company, CompanyFilter}
 import com.rite.syntax.*
 import zio.*
 import zio.test.*
@@ -16,7 +16,16 @@ object CompanyRepositorySpec extends ZIOSpecDefault with RepositorySpec {
     scala.util.Random.alphanumeric.take(8).mkString
 
   private def genCompany: Company =
-    Company(id = -1L, slug = genString, name = genString, url = genString)
+    Company(
+      id = -1L,
+      slug = genString,
+      name = genString,
+      url = genString,
+      location = Some(genString),
+      country = Some(genString),
+      industry = Some(genString),
+      tags = (1 to 3).map(_ => genString).toList
+    )
 
   override val initScript: String = "sql/companies.sql"
 
@@ -85,6 +94,17 @@ object CompanyRepositorySpec extends ZIOSpecDefault with RepositorySpec {
 
         program.assert { case (createdCompanies, fetchedCompanies) =>
           createdCompanies.toSet == fetchedCompanies.toSet
+        }
+      },
+      test("search by tag") {
+        val program = for {
+          repo    <- ZIO.service[CompanyRepository]
+          company <- repo.create(genCompany)
+          fetched <- repo.searchByFilter(CompanyFilter(tags = company.tags.headOption.toList))
+        } yield (fetched, company)
+
+        program.assert { case (fetched, company) =>
+          fetched.nonEmpty && fetched.tail.isEmpty && fetched.head == company
         }
       }
     ).provide(

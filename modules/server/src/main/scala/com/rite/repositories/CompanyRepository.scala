@@ -8,6 +8,7 @@ import io.getquill.jdbczio.Quill
 trait CompanyRepository extends Repository[Company] {
   def getBySlug(slug: String): Task[Option[Company]]
   def uniqueAttributes: Task[CompanyFilter]
+  def searchByFilter(filter: CompanyFilter): Task[List[Company]]
 }
 
 class CompanyRepositoryLive private (quill: Quill.Postgres[SnakeCase]) extends CompanyRepository {
@@ -63,6 +64,20 @@ class CompanyRepositoryLive private (quill: Quill.Postgres[SnakeCase]) extends C
       industries <- run(query[Company].map(_.industry).distinct).map(_.flatMap(_.toList))
       tags       <- run(query[Company].map(_.tags)).map(_.flatten.toSet.toList)
     } yield CompanyFilter(locations, countries, industries, tags)
+
+  override def searchByFilter(filter: CompanyFilter): Task[List[Company]] =
+    if (filter.isEmpty)
+      getAll
+    else
+      run {
+        query[Company]
+          .filter { company =>
+            liftQuery(filter.locations.toSet).contains(company.location) ||
+            liftQuery(filter.countries.toSet).contains(company.country) ||
+            liftQuery(filter.industries.toSet).contains(company.industry) ||
+            sql"${lift(filter.tags)} && ${company.tags}".asCondition
+          }
+      }
 }
 
 object CompanyRepositoryLive {

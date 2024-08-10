@@ -34,9 +34,14 @@ class CompanyController private (
       companyService.getAllFilters.either
     }
 
+  val searchByFilter: ServerEndpoint[Any, Task] =
+    searchByFilterEndpoint.serverLogic {
+      companyService.searchByFilter(_).either
+    }
+
   // 'getAllFilters' must be processed before 'getById' to avoid path shadowing
   override val routes: List[ServerEndpoint[Any, Task]] =
-    List(create, getAllFilters, getById, getAll)
+    List(create, getAllFilters, searchByFilter, getById, getAll)
 }
 
 object CompanyController {

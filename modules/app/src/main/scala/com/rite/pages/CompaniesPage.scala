@@ -10,9 +10,12 @@ import org.scalajs.dom
 import org.scalajs.dom.{HTMLDivElement, HTMLElement}
 
 object CompaniesPage {
+
+  // components
+  private val filterPanel = new FilterPanel
+
   def apply(): ReactiveHtmlElement[HTMLElement] =
     sectionTag(
-      onMountCallback(_ => performBackendCall()),
       cls := "section-1",
       div(
         cls := "container company-list-hero",
@@ -27,11 +30,11 @@ object CompaniesPage {
           cls := "row jvm-recent-companies-body",
           div(
             cls := "col-lg-4",
-            FilterPanel()
+            filterPanel()
           ),
           div(
             cls := "col-lg-8",
-            children <-- companiesBus.events.map(_.map(renderCompany))
+            children <-- companyEvents.map(_.map(renderCompany))
           )
         )
       )
@@ -49,10 +52,12 @@ object CompaniesPage {
     List("space", "scala")
   )
 
-  private val companiesBus: EventBus[List[Company]] = EventBus[List[Company]]()
-
-  private def performBackendCall(): Unit =
-    useBackend(_.company.getAllEndpoint(payload = ())).emitTo(companiesBus)
+  private val companyEvents: EventStream[List[Company]] =
+    useBackend(_.company.getAllEndpoint(payload = ())).toEventStream.mergeWith {
+      filterPanel.triggerFilters.flatMap { newFilter =>
+        useBackend(_.company.searchByFilterEndpoint(newFilter)).toEventStream
+      }
+    }
 
   private def renderCompany(company: Company) =
     div(

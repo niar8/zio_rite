@@ -43,4 +43,13 @@ trait CompanyEndpoints extends Endpoints {
     .in("companies" / "filters")
     .get
     .out(jsonBody[CompanyFilter])
+
+  val searchByFilterEndpoint = baseEndpoint
+    .tag("companies")
+    .name("searchByFilter")
+    .description("Search companies applying a filter")
+    .in("companies" / "search")
+    .post
+    .in(jsonBody[CompanyFilter])
+    .out(jsonBody[List[Company]])
 }
