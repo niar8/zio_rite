@@ -9,11 +9,19 @@ object Session {
   private val stateName: String            = "userState"
   val userStateVar: Var[Option[UserToken]] = Var(Option.empty)
 
-  def isActive: Boolean = userStateVar.now().nonEmpty
+  def isActive: Boolean = {
+    loadUserState()
+    userStateVar.now().nonEmpty
+  }
 
   def setUserState(token: UserToken): Unit = {
     userStateVar.set(Some(token))
     Storage.set(stateName, token)
+  }
+
+  def getUserState: Option[UserToken] = {
+    loadUserState()
+    userStateVar.now()
   }
 
   def loadUserState(): Unit = {

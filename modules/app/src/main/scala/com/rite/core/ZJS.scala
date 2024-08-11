@@ -38,4 +38,12 @@ object ZJS {
         .serviceWithZIO[BackendClient](_.endpointRequestZIO(endpoint)(payload))
         .provide(BackendClientLive.configuredLayer)
   }
+
+  extension [I, E <: Throwable, O](endpoint: Endpoint[String, I, E, O, Any]) {
+    @annotation.targetName("applySecure")
+    def apply(payload: I): Task[O] =
+      ZIO
+        .serviceWithZIO[BackendClient](_.secureEndpointRequestZIO(endpoint)(payload))
+        .provide(BackendClientLive.configuredLayer)
+  }
 }

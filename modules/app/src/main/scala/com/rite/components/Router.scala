@@ -13,21 +13,12 @@ object Router {
       routes(
         div(
           cls := "container-fluid",
-          (pathEnd | path("companies")) {
-            CompaniesPage()
-          },
-          path("login") {
-            LoginPage()
-          },
-          path("signup") {
-            SignUpPage()
-          },
-          path("logout") {
-            LogoutPage()
-          },
-          noneMatched {
-            NotFoundPage()
-          }
+          (pathEnd | path("companies")) { CompaniesPage() },
+          path("signup") { SignUpPage() },
+          path("login") { LoginPage() },
+          path("profile") { ProfilePage() },
+          path("logout") { LogoutPage() },
+          noneMatched { NotFoundPage() }
         )
       )
     )

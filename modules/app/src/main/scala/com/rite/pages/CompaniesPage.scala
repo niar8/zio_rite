@@ -48,7 +48,7 @@ object CompaniesPage {
   private val companyEvents: EventStream[List[Company]] =
     firstBatch.events.mergeWith {
       filterPanel.triggerFilters.flatMap { newFilter =>
-        useBackend(_.company.searchByFilterEndpoint(newFilter)).toEventStream
+        useBackend(_.company.searchByFilterEndpoint(payload = newFilter)).toEventStream
       }
     }
 
