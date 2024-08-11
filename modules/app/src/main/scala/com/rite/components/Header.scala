@@ -4,6 +4,8 @@ import com.raquo.laminar.api.L.{*, given}
 import com.raquo.laminar.codecs.StringAsIsCodec
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import com.rite.common.*
+import com.rite.core.Session
+import com.rite.domain.data.UserToken
 import org.scalajs.dom
 import org.scalajs.dom.{HTMLAnchorElement, HTMLDivElement, HTMLLIElement}
 
@@ -35,7 +37,7 @@ object Header {
                 idAttr := "navbarNav",
                 ul(
                   cls := "navbar-nav ms-auto menu align-center expanded text-center SMN_effect-3",
-                  renderNavLinks()
+                  children <-- Session.userStateVar.signal.map(renderNavLinks)
                 )
               )
             )
@@ -55,12 +57,26 @@ object Header {
       )
     )
 
-  private def renderNavLinks(): Seq[ReactiveHtmlElement[HTMLLIElement]] =
-    List(
-      renderNavLink("Companies", "/companies"),
-      renderNavLink("Log In", "/login"),
+  private def renderNavLinks(
+      maybeToken: Option[UserToken]
+  ): Seq[ReactiveHtmlElement[HTMLLIElement]] = {
+    val constantLinks = List(
+      renderNavLink("Companies", "/companies")
+    )
+
+    val unauthedLinks = List(
+      renderNavLink("Log in", "/login"),
       renderNavLink("Sign up", "/signup")
     )
+
+    val authedLinks = List(
+      renderNavLink("Add company", "/post"),
+      renderNavLink("Profile", "/profile"),
+      renderNavLink("Log out", "/logout")
+    )
+
+    constantLinks ++ (if (maybeToken.nonEmpty) authedLinks else unauthedLinks)
+  }
 
   private def renderNavLink(text: String, location: String): ReactiveHtmlElement[HTMLLIElement] =
     li(

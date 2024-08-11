@@ -4,6 +4,7 @@ import com.raquo.laminar.api.L.{*, given}
 import frontroute.*
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import com.rite.common.Constants
+import com.rite.core.Session
 import com.rite.core.ZJS.*
 import com.rite.http.requests.LoginRequest
 import org.scalajs.dom
@@ -41,7 +42,7 @@ object LoginPage {
       useBackend(
         _.user.loginEndpoint(LoginRequest(state.email, state.password))
       ).map { userToken =>
-        // TODO set user token
+        Session.setUserState(userToken)
         stateVar.set(State())
         BrowserNavigation.replaceState("/")
       }.tapError { e =>

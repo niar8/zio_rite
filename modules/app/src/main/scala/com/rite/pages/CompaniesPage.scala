@@ -16,6 +16,9 @@ object CompaniesPage {
 
   def apply(): ReactiveHtmlElement[HTMLElement] =
     sectionTag(
+      onMountCallback { _ =>
+        useBackend(_.company.getAllEndpoint(payload = ())).emitTo(firstBatch)
+      },
       cls := "section-1",
       div(
         cls := "container company-list-hero",
@@ -40,20 +43,10 @@ object CompaniesPage {
       )
     )
 
-  private val dummyCompany = Company(
-    1L,
-    "simple-company",
-    "Simple company",
-    "http://dummy.com",
-    Some("Anywhere"),
-    Some("On Mars"),
-    Some("space travel"),
-    None,
-    List("space", "scala")
-  )
+  private val firstBatch: EventBus[List[Company]] = EventBus[List[Company]]()
 
   private val companyEvents: EventStream[List[Company]] =
-    useBackend(_.company.getAllEndpoint(payload = ())).toEventStream.mergeWith {
+    firstBatch.events.mergeWith {
       filterPanel.triggerFilters.flatMap { newFilter =>
         useBackend(_.company.searchByFilterEndpoint(newFilter)).toEventStream
       }
