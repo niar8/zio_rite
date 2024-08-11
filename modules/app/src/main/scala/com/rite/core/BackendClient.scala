@@ -1,7 +1,7 @@
 package com.rite.core
 
 import com.rite.configs.BackendClientConfig
-import com.rite.http.endpoints.CompanyEndpoints
+import com.rite.http.endpoints.{CompanyEndpoints, UserEndpoints}
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.impl.zio.FetchZioBackend
@@ -12,6 +12,7 @@ import zio.*
 
 trait BackendClient {
   val company: CompanyEndpoints
+  val user: UserEndpoints
 
   def endpointRequestZIO[I, E <: Throwable, O](
       endpoint: Endpoint[Unit, I, E, O, Any]
@@ -24,6 +25,7 @@ class BackendClientLive(
     config: BackendClientConfig
 ) extends BackendClient {
   override val company: CompanyEndpoints = new CompanyEndpoints {}
+  override val user: UserEndpoints       = new UserEndpoints {}
 
   override def endpointRequestZIO[I, E <: Throwable, O](
       endpoint: Endpoint[Unit, I, E, O, Any]
