@@ -8,42 +8,76 @@ import com.rite.core.Session
 import com.rite.core.ZJS.*
 import com.rite.http.requests.LoginRequest
 import org.scalajs.dom
-import org.scalajs.dom.HTMLDivElement
+import org.scalajs.dom.{HTMLDivElement, HTMLElement}
 import zio.*
 
-object LoginPage {
-  private case class State(
-      email: String = "",
-      password: String = "",
-      upstreamError: Option[String] = None,
-      showStatus: Boolean = false
-  ) {
-    private val invalidEmailError: Option[String] =
-      Option.when(!email.matches(Constants.emailRegex))("User email is invalid")
-    private val emptyPasswordError: Option[String] =
-      Option.when(password.isEmpty)("Password can't be empty")
+final case class LoginFormState(
+    email: String = "",
+    password: String = "",
+    upstreamError: Option[String] = None,
+    override val showStatus: Boolean = false
+) extends FormState {
+  private val invalidEmailError: Option[String] =
+    Option.when(!email.matches(Constants.emailRegex))("User email is invalid")
+  private val emptyPasswordError: Option[String] =
+    Option.when(password.isEmpty)("Password can't be empty")
 
-    private val errorList: Seq[Option[String]] =
-      List(invalidEmailError, emptyPasswordError, upstreamError)
+  override val errorList: List[Option[String]] =
+    List(invalidEmailError, emptyPasswordError, upstreamError)
 
-    val maybeError: Option[String] =
-      errorList.find(_.isDefined).flatten.filter(_ => showStatus)
+  // None because of the redirecting to another page anyway
+  override def maybeSuccess: Option[String] = None
+}
 
-    val hasErrors: Boolean =
-      errorList.exists(_.isDefined)
-  }
+object LoginPage extends FormPage[LoginFormState](title = "Log in") {
+  override protected val stateVar: Var[LoginFormState] =
+    Var(LoginFormState())
 
-  private val stateVar = Var(State())
+  override protected def renderChildren(): List[ReactiveHtmlElement[HTMLElement]] = List(
+    renderInput(
+      name = "Email",
+      uid = "email-input",
+      kind = "text",
+      isRequired = true,
+      plcHolder = "Your email",
+      updateFn = (s, e) =>
+        s.copy(
+          email = e,
+          upstreamError = None,
+          showStatus = false
+        )
+    ),
+    renderInput(
+      name = "Password",
+      uid = "password-input",
+      kind = "password",
+      isRequired = true,
+      plcHolder = "Your password",
+      updateFn = (s, p) =>
+        s.copy(
+          password = p,
+          upstreamError = None,
+          showStatus = false
+        )
+    ),
+    button(
+      `type` := "button",
+      "Log in",
+      onClick.preventDefault.mapTo(stateVar.now()) --> submitter
+    )
+  )
 
-  private val submitter = Observer[State] { state =>
+  private val submitter = Observer[LoginFormState] { state =>
     if (state.hasErrors)
       stateVar.update(_.copy(showStatus = true))
     else
       useBackend(
-        _.user.loginEndpoint(LoginRequest(state.email, state.password))
+        _.user.loginEndpoint(
+          payload = LoginRequest(state.email, state.password)
+        )
       ).map { userToken =>
         Session.setUserState(userToken)
-        stateVar.set(State())
+        stateVar.set(LoginFormState())
         BrowserNavigation.replaceState("/")
       }.tapError { e =>
         ZIO.succeed {
@@ -51,101 +85,4 @@ object LoginPage {
         }
       }.runJs
   }
-
-  def apply(): ReactiveHtmlElement[HTMLDivElement] =
-    div(
-      cls := "row",
-      div(
-        cls := "col-md-5 p-0",
-        div(
-          cls := "logo",
-          img(
-            src := Constants.logoImage,
-            alt := "Rock the JVM"
-          )
-        )
-      ),
-      div(
-        cls := "col-md-7",
-        // right
-        div(
-          cls := "form-section",
-          div(cls := "top-section", h1(span("Log In"))),
-          children <-- stateVar.signal
-            .map(_.maybeError)
-            .map(_.map(renderError))
-            .map(_.toList),
-          form(
-            nameAttr := "signin",
-            cls      := "form",
-            idAttr   := "form",
-            renderInput(
-              name = "Email",
-              uid = "email-input",
-              kind = "text",
-              isRequired = true,
-              plcHolder = "Your email",
-              updateFn = (s, e) =>
-                s.copy(
-                  email = e,
-                  upstreamError = None,
-                  showStatus = false
-                )
-            ),
-            renderInput(
-              name = "Password",
-              uid = "password-input",
-              kind = "password",
-              isRequired = true,
-              plcHolder = "Your password",
-              updateFn = (s, p) =>
-                s.copy(
-                  password = p,
-                  upstreamError = None,
-                  showStatus = false
-                )
-            ),
-            button(
-              `type` := "button",
-              "Log In",
-              onClick.preventDefault.mapTo(stateVar.now()) --> submitter
-            )
-          )
-        )
-      )
-    )
-
-  private def renderError(error: String): ReactiveHtmlElement[HTMLDivElement] =
-    div(cls := "page-status-errors", error)
-
-  private def renderInput(
-      name: String,
-      uid: String,
-      kind: String,
-      isRequired: Boolean,
-      plcHolder: String,
-      updateFn: (State, String) => State
-  ): ReactiveHtmlElement[HTMLDivElement] =
-    div(
-      cls := "row",
-      div(
-        cls := "col-md-12",
-        div(
-          cls := "form-input",
-          label(
-            forId := uid,
-            cls   := "form-label",
-            if (isRequired) span("*") else span(),
-            name
-          ),
-          input(
-            `type`      := kind,
-            cls         := "form-control",
-            idAttr      := uid,
-            placeholder := plcHolder,
-            onInput.mapToValue --> stateVar.updater(updateFn)
-          )
-        )
-      )
-    )
 }
