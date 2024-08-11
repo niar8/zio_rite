@@ -22,6 +22,9 @@ object Router {
           path("signup") {
             SignUpPage()
           },
+          path("logout") {
+            LogoutPage()
+          },
           noneMatched {
             NotFoundPage()
           }

@@ -26,4 +26,9 @@ object Session {
     // retrieve the user token (known to be valid)
     userStateVar.set(Storage.get[UserToken](stateName))
   }
+
+  def clearUserState(): Unit = {
+    Storage.remove(stateName)
+    userStateVar.set(Option.empty)
+  }
 }
