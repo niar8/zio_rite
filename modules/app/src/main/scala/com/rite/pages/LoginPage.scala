@@ -4,6 +4,7 @@ import com.raquo.laminar.api.L.{*, given}
 import frontroute.*
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import com.rite.common.Constants
+import com.rite.components.Anchors
 import com.rite.core.Session
 import com.rite.core.ZJS.*
 import com.rite.http.requests.LoginRequest
@@ -64,6 +65,11 @@ object LoginPage extends FormPage[LoginFormState](title = "Log in") {
       `type` := "button",
       "Log in",
       onClick.preventDefault.mapTo(stateVar.now()) --> submitter
+    ),
+    Anchors.renderNavLink(
+      text = "Forgot password?",
+      location = "/forgot",
+      cssClass = "auth-link"
     )
   )
 

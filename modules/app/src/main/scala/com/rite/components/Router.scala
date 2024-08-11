@@ -16,6 +16,7 @@ object Router {
           (pathEnd | path("companies")) { CompaniesPage() },
           path("signup") { SignUpPage() },
           path("login") { LoginPage() },
+          path("forgot") { ForgotPasswordPage() },
           path("profile") { ProfilePage() },
           path("logout") { LogoutPage() },
           noneMatched { NotFoundPage() }
