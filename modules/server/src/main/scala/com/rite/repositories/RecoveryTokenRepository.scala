@@ -29,11 +29,16 @@ class RecoveryTokenRepositoryLive private (
     }
 
   override def checkToken(email: String, token: String): Task[Boolean] =
-    run(
-      query[PasswordRecoveryToken].filter { rt =>
-        rt.email == lift(email) && rt.token == lift(token)
-      }
-    ).map(_.nonEmpty)
+    for {
+      now <- Clock.instant
+      isValid <- run {
+        query[PasswordRecoveryToken].filter { rt =>
+          rt.email == lift(email) &&
+          rt.token == lift(token) &&
+          rt.expiration > lift(now.toEpochMilli)
+        }
+      }.map(_.nonEmpty)
+    } yield isValid
 
   private def makeFreshToken(email: String): Task[String] =
     findToken(email).flatMap {

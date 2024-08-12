@@ -32,8 +32,7 @@ final case class ChangePasswordState(
 }
 
 object ProfilePage extends FormPage[ChangePasswordState](title = "Profile") {
-  override protected val stateVar: Var[ChangePasswordState] =
-    Var(ChangePasswordState())
+  override protected def basicState: ChangePasswordState = ChangePasswordState()
 
   override protected def renderChildren(): List[ReactiveHtmlElement[HTMLElement]] =
     Session.getUserState

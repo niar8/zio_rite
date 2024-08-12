@@ -1,41 +1,42 @@
 package com.rite.pages
 
 import com.raquo.laminar.api.L.{*, given}
+import com.rite.core.ZJS.*
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import com.rite.common.Constants
-import com.rite.core.Session
-import com.rite.core.ZJS.*
-import com.rite.http.requests.RegisterUserAccountRequest
-import com.rite.pages.LoginPage.{renderInput, stateVar}
-import frontroute.*
+import com.rite.components.Anchors
+import com.rite.http.requests.RecoverPasswordRequest
+import org.scalajs.dom.HTMLElement
 import org.scalajs.dom
-import org.scalajs.dom.{HTMLDivElement, HTMLElement}
 import zio.ZIO
 
-final case class SignUpFormState(
+final case class RecoverPasswordState(
     email: String = "",
-    password: String = "",
+    token: String = "",
+    newPassword: String = "",
     confirmPassword: String = "",
     upstreamStatus: Option[Either[String, String]] = None,
     override val showStatus: Boolean = false
 ) extends FormState {
   private val invalidEmailError: Option[String] =
     Option.when(!email.matches(Constants.emailRegex))("User email is invalid")
-  private val emptyPasswordError: Option[String] =
-    Option.when(password.isEmpty)("Password can't be empty")
+  private val emptyTokenError: Option[String] =
+    Option.when(token.isEmpty)("Token can't be empty")
+  private val emptyNewPasswordError: Option[String] =
+    Option.when(newPassword.isEmpty)("Password can't be empty")
   private val confirmPasswordError: Option[String] =
-    Option.when(password != confirmPassword)("Passwords must match")
+    Option.when(newPassword != confirmPassword)("Passwords must match")
 
   override val errorList: List[Option[String]] =
-    List(invalidEmailError, emptyPasswordError, confirmPasswordError) ++
+    List(invalidEmailError, emptyTokenError, emptyNewPasswordError, confirmPasswordError) ++
       upstreamStatus.map(_.left.toOption).toList
 
   override val maybeSuccess: Option[String] =
     upstreamStatus.flatMap(_.toOption)
 }
 
-object SignUpPage extends FormPage[SignUpFormState](title = "Sign up") {
-  override protected def basicState: SignUpFormState = SignUpFormState()
+object RecoverPasswordPage extends FormPage[RecoverPasswordState]("Recover password") {
+  override protected def basicState: RecoverPasswordState = RecoverPasswordState()
 
   override protected def renderChildren(): List[ReactiveHtmlElement[HTMLElement]] = List(
     renderInput(
@@ -52,14 +53,27 @@ object SignUpPage extends FormPage[SignUpFormState](title = "Sign up") {
         )
     ),
     renderInput(
-      name = "Password",
-      uid = "password-input",
+      name = "Recovery token (from email)",
+      uid = "token-input",
+      kind = "text",
+      isRequired = true,
+      plcHolder = "Your token",
+      updateFn = (s, t) =>
+        s.copy(
+          token = t,
+          upstreamStatus = None,
+          showStatus = false
+        )
+    ),
+    renderInput(
+      name = "New password",
+      uid = "new-password-input",
       kind = "password",
       isRequired = true,
-      plcHolder = "Your password",
+      plcHolder = "New password",
       updateFn = (s, p) =>
         s.copy(
-          password = p,
+          newPassword = p,
           upstreamStatus = None,
           showStatus = false
         )
@@ -81,22 +95,27 @@ object SignUpPage extends FormPage[SignUpFormState](title = "Sign up") {
       `type` := "button",
       "Sign Up",
       onClick.preventDefault.mapTo(stateVar.now()) --> submitter
+    ),
+    Anchors.renderNavLink(
+      text = "Need a password recovery token?",
+      location = "/forgot",
+      cssClass = "auth-link"
     )
   )
 
-  private val submitter = Observer[SignUpFormState] { state =>
+  private val submitter = Observer[RecoverPasswordState] { state =>
     if (state.hasErrors)
       stateVar.update(_.copy(showStatus = true))
     else
       useBackend(
-        _.user.createEndpoint(
-          payload = RegisterUserAccountRequest(state.email, state.password)
+        _.user.recoverPasswordEndpoint(
+          payload = RecoverPasswordRequest(state.email, state.token, state.newPassword)
         )
       ).as {
         stateVar.update(
           _.copy(
             showStatus = true,
-            upstreamStatus = Some(Right("Account created! You can login now."))
+            upstreamStatus = Some(Right("Password successfully reset. You can login now"))
           )
         )
       }.tapError { e =>

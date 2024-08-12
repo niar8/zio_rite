@@ -14,7 +14,7 @@ object HttpError {
 
   def encode(error: Throwable): (StatusCode, String) =
     error match {
-      case UnauthorizedException => (StatusCode.Unauthorized, error.getMessage)
+      case UnauthorizedException(message) => (StatusCode.Unauthorized, message)
       // TODO: add more statuses
       case _ => (StatusCode.InternalServerError, error.getMessage)
     }

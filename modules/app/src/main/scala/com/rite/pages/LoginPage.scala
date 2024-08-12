@@ -31,8 +31,7 @@ final case class LoginFormState(
 }
 
 object LoginPage extends FormPage[LoginFormState](title = "Log in") {
-  override protected val stateVar: Var[LoginFormState] =
-    Var(LoginFormState())
+  override protected def basicState: LoginFormState = LoginFormState()
 
   override protected def renderChildren(): List[ReactiveHtmlElement[HTMLElement]] = List(
     renderInput(

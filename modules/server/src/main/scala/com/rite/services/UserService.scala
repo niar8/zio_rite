@@ -4,7 +4,9 @@ import zio.*
 
 import java.security.SecureRandom
 import com.rite.domain.data.*
+import com.rite.domain.errors.UnauthorizedException
 import com.rite.repositories.*
+import zio.http.model.HttpError.Unauthorized
 
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
@@ -50,7 +52,7 @@ class UserServiceLive private (
     for {
       existingUser <- userRepo
         .getByEmail(email)
-        .someOrFail(new RuntimeException(s"cannot verify user, email $email doesn't exist"))
+        .someOrFail(UnauthorizedException(s"User $email doesn't exist"))
       isVerified <- UserServiceLive.Hasher.validateHash(oldPassword, existingUser.hashedPassword)
       hashedPassword <- UserServiceLive.Hasher.generateHash(newPassword)
       updatedUser <- userRepo
@@ -63,7 +65,7 @@ class UserServiceLive private (
     for {
       existingUser <- userRepo
         .getByEmail(email)
-        .someOrFail(new RuntimeException(s"cannot verify user, email $email doesn't exist"))
+        .someOrFail(UnauthorizedException(s"User $email doesn't exist"))
       isVerified <- UserServiceLive.Hasher.validateHash(password, existingUser.hashedPassword)
       updatedUser <- userRepo
         .delete(existingUser.id)
@@ -75,7 +77,7 @@ class UserServiceLive private (
     for {
       existingUser <- userRepo
         .getByEmail(email)
-        .someOrFail(new RuntimeException(s"cannot verify user $email"))
+        .someOrFail(UnauthorizedException(s"User $email doesn't exist"))
       isVerified <- UserServiceLive.Hasher.validateHash(password, existingUser.hashedPassword)
       maybeToken <- jwtService.createToken(existingUser).when(isVerified)
     } yield maybeToken

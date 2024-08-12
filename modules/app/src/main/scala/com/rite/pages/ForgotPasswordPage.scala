@@ -3,6 +3,7 @@ package com.rite.pages
 import com.raquo.laminar.api.L.{*, given}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import com.rite.common.Constants
+import com.rite.components.Anchors
 import com.rite.core.ZJS.*
 import com.rite.http.requests.ForgotPasswordRequest
 import org.scalajs.dom.HTMLElement
@@ -24,8 +25,7 @@ final case class ForgotPasswordState(
 }
 
 object ForgotPasswordPage extends FormPage[ForgotPasswordState]("Forgot password") {
-  override protected val stateVar: Var[ForgotPasswordState] =
-    Var(ForgotPasswordState())
+  override protected def basicState: ForgotPasswordState = ForgotPasswordState()
 
   override protected def renderChildren(): List[ReactiveHtmlElement[HTMLElement]] = List(
     renderInput(
@@ -45,6 +45,11 @@ object ForgotPasswordPage extends FormPage[ForgotPasswordState]("Forgot password
       `type` := "button",
       "Recover password",
       onClick.preventDefault.mapTo(stateVar.now()) --> submitter
+    ),
+    Anchors.renderNavLink(
+      text = "Have a password recovery token?",
+      location = "/recover",
+      cssClass = "auth-link"
     )
   )
 

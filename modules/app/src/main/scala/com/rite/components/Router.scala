@@ -18,6 +18,7 @@ object Router {
           path("login") { LoginPage() },
           path("forgot") { ForgotPasswordPage() },
           path("profile") { ProfilePage() },
+          path("recover") { RecoverPasswordPage() },
           path("logout") { LogoutPage() },
           noneMatched { NotFoundPage() }
         )

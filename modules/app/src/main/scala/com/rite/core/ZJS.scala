@@ -9,7 +9,7 @@ object ZJS {
     ZIO.serviceWithZIO[BackendClient]
 
   extension [E <: Throwable, A](zio: ZIO[BackendClient, E, A]) {
-    def emitTo(eventBus: EventBus[A]) =
+    def emitTo(eventBus: EventBus[A]): Fiber.Runtime[Throwable, A] =
       Unsafe.unsafe { implicit unsafe =>
         Runtime.default.unsafe.fork(
           zio
@@ -24,9 +24,9 @@ object ZJS {
       eventBus.events
     }
 
-    def runJs: CancelableFuture[A] =
+    def runJs: Fiber.Runtime[E, A] =
       Unsafe.unsafe { implicit unsafe =>
-        Runtime.default.unsafe.runToFuture(
+        Runtime.default.unsafe.fork(
           zio.provide(BackendClientLive.configuredLayer)
         )
       }

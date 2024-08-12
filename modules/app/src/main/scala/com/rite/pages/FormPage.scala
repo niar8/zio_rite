@@ -23,8 +23,10 @@ trait FormState {
 }
 
 abstract class FormPage[S <: FormState](title: String) {
-  protected val stateVar: Var[S]
+  protected def basicState: S
   protected def renderChildren(): List[ReactiveHtmlElement[HTMLElement]]
+
+  protected val stateVar: Var[S] = Var(basicState)
 
   protected def renderInput(
       name: String,
@@ -59,6 +61,7 @@ abstract class FormPage[S <: FormState](title: String) {
 
   def apply(): ReactiveHtmlElement[HTMLDivElement] =
     div(
+      onMountCallback(_ => stateVar.set(basicState)),
       cls := "row",
       div(
         cls := "col-md-5 p-0",
