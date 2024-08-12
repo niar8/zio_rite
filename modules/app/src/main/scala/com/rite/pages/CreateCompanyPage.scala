@@ -66,6 +66,9 @@ object CreateCompanyPage extends FormPage[CreateCompanyState]("Create company") 
         uid = "company-logo",
         isRequired = false
       ),
+      img(
+        src <-- stateVar.signal.map(_.image.getOrElse(""))
+      ),
       renderInput(
         name = "Location",
         uid = "company-location",
@@ -138,11 +141,37 @@ object CreateCompanyPage extends FormPage[CreateCompanyState]("Create company") 
     maybeFile.foreach { file =>
       val reader = new FileReader
       reader.onload = _ => {
-        stateVar.update(_.copy(image = Some(reader.result.toString)))
+        val fakeImage = document.createElement("img").asInstanceOf[HTMLImageElement]
+        fakeImage.addEventListener(
+          "load",
+          _ => {
+            val canvas  = document.createElement("canvas").asInstanceOf[HTMLCanvasElement]
+            val context = canvas.getContext("2d").asInstanceOf[CanvasRenderingContext2D]
+
+            val (width, height) = computeDimensions(fakeImage.width, fakeImage.height)
+            canvas.width = width
+            canvas.height = height
+
+            context.drawImage(fakeImage, offsetX = 0, offsetY = 0, width, height)
+            stateVar.update(_.copy(image = Some(canvas.toDataURL(file.`type`))))
+          }
+        )
+        fakeImage.src = reader.result.toString
       }
       reader.readAsDataURL(file)
     }
   }
+
+  private def computeDimensions(width: Int, height: Int): (Int, Int) =
+    if (width >= height) {
+      val ratio = width * 1.0 / 256
+      val newW  = width / ratio
+      val newH  = height / ratio
+      (newW.toInt, newH.toInt)
+    } else {
+      val (newH, newW) = computeDimensions(height, width)
+      (newW, newH)
+    }
 
   private val submitter = Observer[CreateCompanyState] { state =>
     if (state.hasErrors)
