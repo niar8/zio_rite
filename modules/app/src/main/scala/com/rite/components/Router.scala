@@ -20,6 +20,7 @@ object Router {
           path("profile") { ProfilePage() },
           path("recover") { RecoverPasswordPage() },
           path("logout") { LogoutPage() },
+          path("post") { CreateCompanyPage() },
           noneMatched { NotFoundPage() }
         )
       )
