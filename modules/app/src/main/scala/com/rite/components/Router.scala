@@ -21,6 +21,7 @@ object Router {
           path("recover") { RecoverPasswordPage() },
           path("logout") { LogoutPage() },
           path("post") { CreateCompanyPage() },
+          path("company" / long) { companyId => CompanyPage(companyId) },
           noneMatched { NotFoundPage() }
         )
       )

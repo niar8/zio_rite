@@ -1,7 +1,7 @@
 package com.rite.core
 
 import com.rite.configs.BackendClientConfig
-import com.rite.http.endpoints.{CompanyEndpoints, UserEndpoints}
+import com.rite.http.endpoints.{CompanyEndpoints, ReviewEndpoints, UserEndpoints}
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.impl.zio.FetchZioBackend
@@ -17,6 +17,7 @@ final case class RestrictedEndpointException(
 trait BackendClient {
   val company: CompanyEndpoints
   val user: UserEndpoints
+  val review: ReviewEndpoints
 
   def endpointRequestZIO[I, E <: Throwable, O](
       endpoint: Endpoint[Unit, I, E, O, Any]
@@ -34,6 +35,7 @@ class BackendClientLive(
 ) extends BackendClient {
   override val company: CompanyEndpoints = new CompanyEndpoints {}
   override val user: UserEndpoints       = new UserEndpoints {}
+  override val review: ReviewEndpoints   = new ReviewEndpoints {}
 
   override def endpointRequestZIO[I, E <: Throwable, O](
       endpoint: Endpoint[Unit, I, E, O, Any]
