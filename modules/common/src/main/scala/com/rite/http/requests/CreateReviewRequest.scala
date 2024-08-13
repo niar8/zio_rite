@@ -30,3 +30,16 @@ final case class CreateReviewRequest(
       Instant.now()
     )
 }
+
+object CreateReviewRequest {
+  def fromReview(review: Review): CreateReviewRequest = CreateReviewRequest(
+    companyId = review.companyId,
+    userId = review.userId,
+    management = review.management,
+    culture = review.culture,
+    salary = review.salary,
+    benefits = review.benefits,
+    wouldRecommend = review.wouldRecommend,
+    review = review.review
+  )
+}

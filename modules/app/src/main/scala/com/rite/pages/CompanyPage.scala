@@ -27,6 +27,7 @@ object CompanyPage {
 
   private val addReviewCardActive: Var[Boolean]          = Var(false)
   private val fetchCompanyBus: EventBus[Option[Company]] = EventBus()
+  private val triggerRefreshBus: EventBus[Unit]          = EventBus()
 
   private enum Status {
     case LOADING
@@ -45,16 +46,18 @@ object CompanyPage {
   private def reviewsSignal(companyId: Long): Signal[List[Review]] =
     fetchCompanyBus.events
       .flatMap {
-        case None =>
-          EventStream.empty
-        case Some(company) =>
-          val reviewsBus = EventBus[List[Review]]()
-          useBackend {
-            _.review.getByCompanyIdEndpoint(payload = companyId)
-          }.emitTo(reviewsBus)
-          reviewsBus.events
+        case None          => EventStream.empty
+        case Some(company) => refreshReviewList(companyId)
       }
       .scanLeft(List[Review]())((_, list) => list)
+
+  private def refreshReviewList(companyId: Long) =
+    useBackend(_.review.getByCompanyIdEndpoint(companyId)).toEventStream
+      .mergeWith(
+        triggerRefreshBus.events.flatMap(_ =>
+          useBackend(_.review.getByCompanyIdEndpoint(companyId)).toEventStream
+        )
+      )
 
   private def render(
       company: Company,
@@ -89,7 +92,8 @@ object CompanyPage {
           Option.when(isActive)(
             AddReviewCard(
               company.id,
-              onCancel = () => addReviewCardActive.set(false)
+              onDisable = () => addReviewCardActive.set(false),
+              triggerRefreshBus
             ).apply()
           )
         }

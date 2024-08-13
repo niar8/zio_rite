@@ -1,7 +1,8 @@
 package com.rite.domain.data
 
-import java.time.Instant
 import zio.json.JsonCodec
+
+import java.time.Instant
 
 case class Review(
     id: Long, // PK
@@ -16,3 +17,19 @@ case class Review(
     created: Instant,
     updated: Instant
 ) derives JsonCodec
+
+object Review {
+  def empty(companyId: Long): Review = Review(
+    id = -1L,
+    companyId,
+    userId = -1L,
+    management = 5,
+    culture = 5,
+    salary = 5,
+    benefits = 5,
+    wouldRecommend = 5,
+    review = "",
+    created = Instant.now(),
+    updated = Instant.now()
+  )
+}
