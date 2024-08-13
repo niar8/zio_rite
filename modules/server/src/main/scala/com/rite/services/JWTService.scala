@@ -33,7 +33,7 @@ class JWTServiceLive(jwtConfig: JWTConfig, clock: java.time.Clock) extends JWTSe
       now        <- ZIO.attempt(clock.instant())
       expiration <- ZIO.succeed(now.plusSeconds(jwtConfig.ttl))
       token      <- ZIO.attempt(makeJwt(user, now, expiration))
-    } yield UserToken(user.email, token, expiration.getEpochSecond)
+    } yield UserToken(user.id, user.email, token, expiration.getEpochSecond)
 
   override def verifyToken(token: String): Task[UserId] =
     for {

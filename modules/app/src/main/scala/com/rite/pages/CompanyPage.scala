@@ -2,7 +2,9 @@ package com.rite.pages
 
 import com.raquo.laminar.api.L.{*, given}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
+import com.rite.components.AddReviewCard
 import com.rite.components.CompanyComponents.*
+import com.rite.core.Session
 import com.rite.core.ZJS.*
 import com.rite.domain.data.*
 import org.scalajs.dom.HTMLDivElement
@@ -23,7 +25,8 @@ object CompanyPage {
       child <-- reviewsSignal(id).map(_.toString)
     )
 
-  private val fetchCompanyBus: EventBus[Option[Company]] = EventBus[Option[Company]]()
+  private val addReviewCardActive: Var[Boolean]          = Var(false)
+  private val fetchCompanyBus: EventBus[Option[Company]] = EventBus()
 
   private enum Status {
     case LOADING
@@ -73,19 +76,24 @@ object CompanyPage {
             renderOverview(company)
           )
         ),
-        div(
-          cls := "jvm-companies-details-card-apply-now-btn",
-          button(
-            `type` := "button",
-            cls    := "btn btn-warning",
-            "Add a review"
-          )
-        )
+        child <-- Session.userStateVar.signal.map { maybeUserToken =>
+          maybeRenderUserAction(maybeUserToken, reviewsSignal)
+        }
       )
     ),
     div(
       cls := "container-fluid",
-      renderCompanySummary, // TODO
+      renderCompanySummary, // TODO fill summary later
+      children <-- addReviewCardActive.signal
+        .map { isActive =>
+          Option.when(isActive)(
+            AddReviewCard(
+              company.id,
+              onCancel = () => addReviewCardActive.set(false)
+            ).apply()
+          )
+        }
+        .map(_.toList),
       children <-- reviewsSignal.map(_.map(renderReview)),
       div(
         cls := "container",
@@ -115,6 +123,35 @@ object CompanyPage {
       )
     )
   )
+
+  private def maybeRenderUserAction(
+      maybeUserToken: Option[UserToken],
+      reviewsSignal: Signal[List[Review]]
+  ): ReactiveHtmlElement[HTMLDivElement] =
+    maybeUserToken match
+      case None =>
+        div(
+          cls := "jvm-companies-details-card-apply-now-btn",
+          "You must be logged in to post a review"
+        )
+      case Some(userToken) =>
+        div(
+          cls := "jvm-companies-details-card-apply-now-btn",
+          child <-- reviewsSignal
+            .map(_.find(_.userId == userToken.id))
+            .map {
+              case None =>
+                button(
+                  `type` := "button",
+                  cls    := "btn btn-warning",
+                  "Add a review",
+                  disabled <-- addReviewCardActive.signal,
+                  onClick.mapTo(true) --> addReviewCardActive.writer
+                )
+              case Some(_) =>
+                "You've already posted a review"
+            }
+        )
 
   private def renderCompanySummary: ReactiveHtmlElement[HTMLDivElement] =
     div(
