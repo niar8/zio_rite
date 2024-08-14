@@ -31,6 +31,7 @@ object Application extends ZIOAppDefault {
     UserServiceLive.layer,
     JWTServiceLive.configuredLayer,
     EmailServiceLive.configuredLayer,
+    InviteServiceLive.layer,
     // repos
     CompanyRepositoryLive.layer,
     ReviewRepositoryLive.layer,

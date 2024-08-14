@@ -1,12 +1,12 @@
 package com.rite.http
 
 import com.rite.http.controllers.*
-import com.rite.services.{CompanyService, JWTService, ReviewService, UserService}
+import com.rite.services.*
 import sttp.tapir.server.ServerEndpoint
 import zio.{Task, URIO, ZIO}
 
 object HttpApi {
-  private type R = ReviewService & CompanyService & UserService & JWTService
+  private type R = ReviewService & CompanyService & UserService & JWTService & InviteService
 
   val endpointsZIO: URIO[R, List[ServerEndpoint[Any, Task]]] =
     makeControllers.map(gatherRoutes)
@@ -19,5 +19,6 @@ object HttpApi {
     companies <- CompanyController.makeZIO
     reviews   <- ReviewController.makeZIO
     users     <- UserController.makeZIO
-  } yield List(health, companies, reviews, users)
+    invites   <- InviteController.makeZIO
+  } yield List(health, companies, reviews, users, invites)
 }
