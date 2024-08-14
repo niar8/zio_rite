@@ -1,15 +1,15 @@
 package com.rite.pages
 
+import com.raquo.laminar.DomApi
 import com.raquo.laminar.api.L.{*, given}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import com.rite.components.AddReviewCard
+import com.rite.components.*
 import com.rite.components.CompanyComponents.*
 import com.rite.core.Session
 import com.rite.core.ZJS.*
 import com.rite.domain.data.*
+import org.scalajs.dom
 import org.scalajs.dom.HTMLDivElement
-
-import java.time.Instant
 
 object CompanyPage {
   def apply(id: Long): ReactiveHtmlElement[HTMLDivElement] =
@@ -174,7 +174,9 @@ object CompanyPage {
       cls := "container",
       div(
         cls := "markdown-body overview-section",
-        // TODO add a highlight if this is "your" review
+        cls.toggle("review-highlighted") <-- Session.userStateVar.signal.map {
+          _.map(_.id) == Option(review.userId)
+        },
         div(
           cls := "company-description",
           div(
@@ -185,12 +187,14 @@ object CompanyPage {
             renderReviewDetail("Salary", review.salary),
             renderReviewDetail("Benefits", review.benefits)
           ),
-          // TODO parse this Markdown
+          injectMarkdown(review),
           div(
-            cls := "review-content",
-            review.review
+            cls := "review-posted",
+            s"Posted ${Time.unix2hr(review.created.toEpochMilli)}"
           ),
-          div(cls := "review-posted", "Posted (TODO) a million years ago")
+          child.maybe <-- Session.userStateVar.signal
+            .map(_.filter(_.id == review.userId))
+            .map(_.map(_ => div(cls := "review-posted", "Your review")))
         )
       )
     )
@@ -211,5 +215,17 @@ object CompanyPage {
           )
         )
       )
+    )
+
+  private def injectMarkdown(review: Review): ReactiveHtmlElement[HTMLDivElement] =
+    div(
+      cls := "review-content",
+      DomApi
+        .unsafeParseHtmlStringIntoNodeArray(Markdown.toHtml(review.review))
+        .map {
+          case t: dom.Text         => span(t.data)
+          case e: dom.html.Element => foreignHtmlElement(e)
+          case _                   => emptyNode
+        }
     )
 }

@@ -94,14 +94,9 @@ class AddReviewCard(companyId: Long, onDisable: () => Unit, triggerBus: EventBus
       label(forId := selectorId, s"$name:"),
       select(
         idAttr := selectorId,
-        (1 to 5).reverse.map { v =>
-          option(
-            v.toString,
-            onInput.mapToValue --> stateVar.updater { (s: State, value: String) =>
-              s.copy(review = updateFn(s.review, value.toInt))
-            }
-          )
-        // TODO set state here
+        (1 to 5).reverse.map { v => option(v.toString) },
+        onInput.mapToValue --> stateVar.updater { (s: State, value: String) =>
+          s.copy(review = updateFn(s.review, value.toInt))
         }
       )
     )
