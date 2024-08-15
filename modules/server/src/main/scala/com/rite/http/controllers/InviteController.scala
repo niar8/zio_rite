@@ -39,7 +39,7 @@ class InviteController(
     getByUserIdEndpoint
       .serverSecurityLogic[UserId, Task](jwtService.verifyToken(_).either)
       .serverLogic { token => _ =>
-        inviteService.getByUserId(token.email).either
+        inviteService.getByUserName(token.email).either
       }
 
   override val routes: List[ServerEndpoint[Any, Task]] = List(addPack, invite, getByUserId)

@@ -42,3 +42,11 @@ CREATE TABLE IF NOT EXISTS recovery_tokens(
     token TEXT NOT NULL,
     expiration BIGINT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS invites(
+    id BIGSERIAL PRIMARY KEY,
+    user_name TEXT NOT NULL,
+    company_id BIGINT NOT NULL,
+    n_invites BIGINT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT false
+);
