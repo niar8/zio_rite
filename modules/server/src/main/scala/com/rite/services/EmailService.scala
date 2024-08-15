@@ -1,15 +1,17 @@
 package com.rite.services
 
 import com.rite.config.{Configs, EmailServiceConfig}
+import com.rite.domain.data.Company
 import zio.*
 
 import java.util.Properties
 import javax.mail.internet.MimeMessage
-import javax.mail.{Authenticator, Message, PasswordAuthentication, Session, Transport}
+import javax.mail.*
 
 trait EmailService {
   def sendEmail(to: String, subject: String, content: String): Task[Unit]
   def sendPasswordRecoveryEmail(to: String, token: String): Task[Unit]
+  def sendReviewInvite(from: String, to: String, company: Company): Task[Unit]
 }
 
 class EmailServiceLive private (config: EmailServiceConfig) extends EmailService {
@@ -35,6 +37,28 @@ class EmailServiceLive private (config: EmailServiceConfig) extends EmailService
          |">
          |<h1>RITE Company password recovery</h1>
          |<p>Your password recovery token is: <strong>$token</strong></p>
+         |</div>
+         |""".stripMargin
+    sendEmail(to, subject, content)
+  }
+
+  override def sendReviewInvite(from: String, to: String, company: Company): Task[Unit] = {
+    val subject = s"Invitation to Review ${company.name}"
+    val content: String =
+      s"""
+         |<div style="
+         |  border: 1px solid black;
+         |  padding: 20px;
+         |  font-family: sans-serif;
+         |  line-height: 2;
+         |  font-size: 20px;
+         |">
+         |  <h1>You are invited to review ${company.name}</h1>
+         |  <p>
+         |    Go to
+         |    <a href="http://localhost:1234/company/${company.id}">this link</a>
+         |    to add your thoughts on the app. Should take just a minute.
+         |  </p>
          |</div>
          |""".stripMargin
     sendEmail(to, subject, content)
