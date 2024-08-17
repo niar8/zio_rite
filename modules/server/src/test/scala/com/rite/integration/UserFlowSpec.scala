@@ -1,7 +1,7 @@
 package com.rite.integration
 
 import com.rite.config.{JWTConfig, RecoveryTokensConfig}
-import com.rite.domain.data.UserToken
+import com.rite.domain.data.{Company, UserToken}
 import com.rite.http.controllers.*
 import com.rite.http.requests.*
 import com.rite.http.responses.UserResponse
@@ -49,6 +49,9 @@ object UserFlowSpec extends ZIOSpecDefault with RepositorySpec {
       ZIO.unit
     override def sendPasswordRecoveryEmail(to: String, token: String): Task[Unit] =
       ZIO.succeed(db += (to -> token))
+    override def sendReviewInvite(from: String, to: String, company: Company): Task[Unit] =
+      ZIO.unit
+
     // specific to the test
     def probeToken(email: String): Task[Option[String]] = ZIO.succeed(db.get(email))
   }

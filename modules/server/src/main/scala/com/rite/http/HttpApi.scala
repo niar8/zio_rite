@@ -3,10 +3,11 @@ package com.rite.http
 import com.rite.http.controllers.*
 import com.rite.services.*
 import sttp.tapir.server.ServerEndpoint
-import zio.{Task, URIO, ZIO}
+import zio.*
 
 object HttpApi {
-  private type R = ReviewService & CompanyService & UserService & JWTService & InviteService
+  private type R = ReviewService & CompanyService & UserService & JWTService & InviteService &
+    PaymentService
 
   val endpointsZIO: URIO[R, List[ServerEndpoint[Any, Task]]] =
     makeControllers.map(gatherRoutes)

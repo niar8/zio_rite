@@ -1,6 +1,6 @@
 package com.rite.services
 
-import com.rite.domain.data.{User, UserId, UserToken}
+import com.rite.domain.data.{Company, User, UserId, UserToken}
 import com.rite.repositories.{RecoveryTokenRepository, UserRepository}
 import com.rite.services.{EmailService, JWTService, UserService, UserServiceLive}
 import zio.*
@@ -67,6 +67,9 @@ object UserServiceSpec extends ZIOSpecDefault {
       override def sendEmail(to: String, subject: String, content: String): Task[Unit] =
         ZIO.unit
       override def sendPasswordRecoveryEmail(to: String, token: String): Task[Unit] =
+        ZIO.unit
+
+      override def sendReviewInvite(from: String, to: String, company: Company): Task[Unit] =
         ZIO.unit
     }
   }

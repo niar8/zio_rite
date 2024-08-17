@@ -9,7 +9,8 @@ import zio.*
 
 class InviteController(
     inviteService: InviteService,
-    jwtService: JWTService
+    jwtService: JWTService,
+    paymentService: PaymentService
 ) extends BaseController
     with InviteEndpoints {
   val addPack: ServerEndpoint[Any, Task] =
@@ -42,13 +43,28 @@ class InviteController(
         inviteService.getByUserName(token.email).either
       }
 
-  override val routes: List[ServerEndpoint[Any, Task]] = List(addPack, invite, getByUserId)
+  val addPackPromoted: ServerEndpoint[Any, Task] =
+    addPackPromotedEndpoint
+      .serverSecurityLogic[UserId, Task](jwtService.verifyToken(_).either)
+      .serverLogic { token => req =>
+        inviteService
+          .addInvitePack(token.email, req.companyId)
+          .flatMap { paymentService.createCheckoutSession(_, userName = token.email) }
+          .someOrFail(new RuntimeException("Cannot create payment checkout session"))
+          .map(_.getUrl) // the checkout session URL
+          .either
+      }
+
+  override val routes: List[ServerEndpoint[Any, Task]] =
+    List(addPack, invite, getByUserId, addPackPromoted)
 }
 
 object InviteController {
-  val makeZIO: URIO[JWTService & InviteService, InviteController] =
+  private type R = PaymentService & JWTService & InviteService
+  val makeZIO: URIO[R, InviteController] =
     for {
-      inviteService <- ZIO.service[InviteService]
-      jwtService    <- ZIO.service[JWTService]
-    } yield new InviteController(inviteService, jwtService)
+      inviteService  <- ZIO.service[InviteService]
+      jwtService     <- ZIO.service[JWTService]
+      paymentService <- ZIO.service[PaymentService]
+    } yield new InviteController(inviteService, jwtService, paymentService)
 }
