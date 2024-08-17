@@ -41,7 +41,7 @@ trait InviteEndpoints extends Endpoints {
       .out(jsonBody[List[InviteNamedRecord]])
 
   // TODO - paid endpoints
-  //POST /invite/promoted
+  // POST /invite/promoted
   val addPackPromotedEndpoint =
     secureBaseEndpoint
       .tag("Invites")
@@ -51,4 +51,15 @@ trait InviteEndpoints extends Endpoints {
       .post
       .in(jsonBody[InvitePackRequest])
       .out(stringBody) // this is a Stripe checkout URL
+
+    // webhook - will be called automatically by Stripe
+  val webhookEndpoint =
+    baseEndpoint
+      .tag("Invites")
+      .name("invite webhook")
+      .description("Confirm the purchase of an invite pack")
+      .in("invite" / "webhook")
+      .post
+      .in(header[String]("Stripe-signature"))
+      .in(stringBody)
 }

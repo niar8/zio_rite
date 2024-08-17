@@ -55,8 +55,21 @@ class InviteController(
           .either
       }
 
+  val webhook: ServerEndpoint[Any, Task] =
+    webhookEndpoint
+      .serverLogic { (signature, payload) =>
+        paymentService
+          .handleWebhookEvent(
+            signature,
+            payload,
+            packId => inviteService.activatePack(packId.toLong)
+          )
+          .unit
+          .either
+      }
+
   override val routes: List[ServerEndpoint[Any, Task]] =
-    List(addPack, invite, getByUserId, addPackPromoted)
+    List(addPack, invite, getByUserId, addPackPromoted, webhook)
 }
 
 object InviteController {

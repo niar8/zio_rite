@@ -4,6 +4,8 @@ import com.rite.config.{Configs, StripeConfig}
 import com.stripe.model.checkout.Session
 import com.stripe.param.checkout.SessionCreateParams
 import com.stripe.Stripe as TheStripe
+import com.stripe.net.Webhook
+import scala.jdk.OptionConverters.*
 import zio.*
 
 trait PaymentService {
@@ -11,6 +13,12 @@ trait PaymentService {
       invitePackId: Long,
       userName: String
   ): Task[Option[Session]]
+
+  def handleWebhookEvent[A](
+      signature: String,
+      payload: String,
+      action: String => Task[A]
+  ): Task[Option[A]]
 }
 
 class PaymentServiceLive(stripeConfig: StripeConfig) extends PaymentService {
@@ -50,6 +58,26 @@ class PaymentServiceLive(stripeConfig: StripeConfig) extends PaymentService {
       .map(Option(_))
       .logError("Stripe session creation FAILED")
       .catchSome { case _ => ZIO.none }
+
+  override def handleWebhookEvent[A](
+      signature: String,
+      payload: String,
+      action: String => Task[A]
+  ): Task[Option[A]] =
+    ZIO
+      .attempt { Webhook.constructEvent(payload, signature, stripeConfig.secret) }
+      .flatMap { event =>
+        event.getType match {
+          case "checkout.session.completed" =>
+            ZIO.foreach(
+              event.getDataObjectDeserializer.getObject.toScala
+                .map(_.asInstanceOf[Session])
+                .map(_.getClientReferenceId())
+            )(action)
+          case _ =>
+            ZIO.none
+        }
+      }
 }
 
 object PaymentServiceLive {
