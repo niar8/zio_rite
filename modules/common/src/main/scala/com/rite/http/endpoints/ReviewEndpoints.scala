@@ -1,6 +1,6 @@
 package com.rite.http.endpoints
 
-import com.rite.domain.data.Review
+import com.rite.domain.data.{Review, ReviewSummary}
 import com.rite.http.requests.CreateReviewRequest
 import sttp.tapir.*
 import sttp.tapir.json.zio.*
@@ -25,6 +25,24 @@ trait ReviewEndpoints extends Endpoints {
     .in("reviews" / path[Long]("id"))
     .get
     .out(jsonBody[Option[Review]])
+
+  // GET /reviews/company/id/summary
+  val getSummaryEndpoint = baseEndpoint
+    .tag("Reviews")
+    .name("get summary by company Id")
+    .description("Get current review summary for a company Id")
+    .in("reviews" / "company" / path[Long]("id") / "summary")
+    .get
+    .out(jsonBody[Option[ReviewSummary]])
+
+  // POST /reviews/company/id/summary
+  val makeSummaryEndpoint = baseEndpoint
+    .tag("Reviews")
+    .name("generate summary by company id")
+    .description("Trigger review summary creation for a company Id")
+    .in("reviews" / "company" / path[Long]("id") / "summary")
+    .post
+    .out(jsonBody[Option[ReviewSummary]])
 
   // GET /reviews/company/id
   val getByCompanyIdEndpoint = baseEndpoint

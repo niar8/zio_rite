@@ -50,3 +50,9 @@ CREATE TABLE IF NOT EXISTS invites(
     n_invites BIGINT NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT false
 );
+
+CREATE TABLE IF NOT EXISTS review_summaries(
+    company_id BIGINT NOT NULL PRIMARY KEY,
+    contents TEXT,
+    created TIMESTAMP NOT NULL DEFAULT now()
+);

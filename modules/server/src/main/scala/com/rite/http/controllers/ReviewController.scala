@@ -28,8 +28,14 @@ class ReviewController private (
   val getByUserId: ServerEndpoint[Any, Task] =
     getByUserIdEndpoint.serverLogic(reviewService.getByUserId(_).either)
 
+  val getSummary: ServerEndpoint[Any, Task] =
+    getSummaryEndpoint.serverLogic(reviewService.getSummary(_).either)
+
+  val makeSummary: ServerEndpoint[Any, Task] =
+    makeSummaryEndpoint.serverLogic(reviewService.makeSummary(_).either)
+
   override val routes: List[ServerEndpoint[Any, Task]] =
-    List(create, getById, getByCompanyId, getByUserId)
+    List(getSummary, makeSummary, create, getById, getByCompanyId, getByUserId)
 }
 
 object ReviewController {
