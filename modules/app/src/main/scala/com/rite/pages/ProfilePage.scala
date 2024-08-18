@@ -3,7 +3,7 @@ package com.rite.pages
 import com.raquo.laminar.api.L.{*, given}
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import com.rite.common.Constants
-import com.rite.components.Anchors
+import com.rite.components.{Anchors, InviteActions}
 import com.rite.core.Session
 import org.scalajs.dom.HTMLDivElement
 
@@ -44,6 +44,7 @@ object ProfilePage {
         cls := "profile-section",
         h3(span("Account settings")),
         Anchors.renderNavLink(text = "Change password", location = "/change_password")
-      )
+      ),
+      InviteActions()
     )
 }
