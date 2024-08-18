@@ -8,8 +8,13 @@ import frontroute.*
 import org.scalajs.dom.HTMLElement
 
 object Router {
+  val externalUrlBus: EventBus[String] = EventBus()
+
   def apply(): ReactiveHtmlElement[HTMLElement] =
     mainTag(
+      onMountCallback { ctx =>
+        externalUrlBus.events.foreach(url => dom.window.location.href = url)(ctx.owner)
+      },
       routes(
         div(
           cls := "container-fluid",
@@ -18,6 +23,7 @@ object Router {
           path("login") { LoginPage() },
           path("forgot") { ForgotPasswordPage() },
           path("profile") { ProfilePage() },
+          path("change_password") { ChangePasswordPage() },
           path("recover") { RecoverPasswordPage() },
           path("logout") { LogoutPage() },
           path("post") { CreateCompanyPage() },

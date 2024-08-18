@@ -8,8 +8,10 @@ import com.rite.components.CompanyComponents.*
 import com.rite.core.Session
 import com.rite.core.ZJS.*
 import com.rite.domain.data.*
+import com.rite.http.requests.InvitePackRequest
 import org.scalajs.dom
 import org.scalajs.dom.HTMLDivElement
+import zio.ZIO
 
 object CompanyPage {
   def apply(id: Long): ReactiveHtmlElement[HTMLDivElement] =
@@ -21,13 +23,13 @@ object CompanyPage {
         case Status.LOADING     => List(div("loading..."))
         case Status.NOT_FOUND   => List(div("company not found"))
         case Status.OK(company) => render(company, reviewsSignal(id))
-      },
-      child <-- reviewsSignal(id).map(_.toString)
+      }
     )
 
   private val addReviewCardActive: Var[Boolean]          = Var(false)
   private val fetchCompanyBus: EventBus[Option[Company]] = EventBus()
   private val triggerRefreshBus: EventBus[Unit]          = EventBus()
+  private val inviteErrorBus: EventBus[String]           = EventBus()
 
   private enum Status {
     case LOADING
@@ -51,11 +53,16 @@ object CompanyPage {
       }
       .scanLeft(List[Review]())((_, list) => list)
 
+  private def startPaymentFlow(companyId: Long) =
+    useBackend(_.invite.addPackPromotedEndpoint(payload = InvitePackRequest(companyId)))
+      .tapError(e => ZIO.succeed(inviteErrorBus.emit(e.getMessage)))
+      .emitTo(Router.externalUrlBus)
+
   private def refreshReviewList(companyId: Long) =
-    useBackend(_.review.getByCompanyIdEndpoint(companyId)).toEventStream
+    useBackend(_.review.getByCompanyIdEndpoint(payload = companyId)).toEventStream
       .mergeWith(
         triggerRefreshBus.events.flatMap(_ =>
-          useBackend(_.review.getByCompanyIdEndpoint(companyId)).toEventStream
+          useBackend(_.review.getByCompanyIdEndpoint(payload = companyId)).toEventStream
         )
       )
 
@@ -99,34 +106,39 @@ object CompanyPage {
         }
         .map(_.toList),
       children <-- reviewsSignal.map(_.map(renderReview)),
+      child.maybe <-- Session.userStateVar.signal.map(_.map(_ => renderInviteAction(company)))
+    )
+  )
+
+  private def renderInviteAction(company: Company): ReactiveHtmlElement[HTMLDivElement] =
+    div(
+      cls := "container",
       div(
-        cls := "container",
+        cls := "rok-last",
         div(
-          cls := "rok-last",
+          cls := "row invite-row",
           div(
-            cls := "row invite-row",
-            div(
-              cls := "col-md-6 col-sm-6 col-6",
-              span(
-                cls := "rock-apply",
-                p("Do you represent this company?"),
-                p("Invite people to leave reviews.")
-              )
-            ),
-            div(
-              cls := "col-md-6 col-sm-6 col-6",
-              a(
-                href   := company.url,
-                target := "blank",
-                button(`type` := "button", cls := "rock-action-btn", "Invite people")
-                // todo invite new people
-              )
+            cls := "col-md-6 col-sm-6 col-6",
+            span(
+              cls := "rock-apply",
+              p("Do you represent this company?"),
+              p("Invite people to leave reviews.")
             )
+          ),
+          div(
+            cls := "col-md-6 col-sm-6 col-6",
+            button(
+              `type` := "button",
+              cls    := "rock-action-btn",
+              "Invite people",
+              disabled <-- inviteErrorBus.events.mapTo(true).startWith(false),
+              onClick.mapToUnit --> (_ => startPaymentFlow(company.id))
+            ),
+            div(child.text <-- inviteErrorBus.events)
           )
         )
       )
     )
-  )
 
   private def maybeRenderUserAction(
       maybeUserToken: Option[UserToken],
