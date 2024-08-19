@@ -13,7 +13,16 @@ import zio.http.{Server, ServerConfig}
 import java.net.InetSocketAddress
 
 object Application extends ZIOAppDefault {
-  private val serverProgram = for {
+  private def runMigrations: RIO[FlywayService, Unit] =
+    ZIO.serviceWithZIO[FlywayService] { flyway =>
+      flyway.runMigrations.catchSome { case e =>
+        ZIO.logError("Migration failed: " + e) *>
+          flyway.runRepairs *>
+          flyway.runMigrations
+      }.unit
+    }
+
+  private def startServer = for {
     endpoints <- HttpApi.endpointsZIO
     serverOptions = ZioHttpServerOptions.default[Any].appendInterceptor(CORSInterceptor.default)
     interpreter   = ZioHttpInterpreter(serverOptions)
@@ -30,7 +39,10 @@ object Application extends ZIOAppDefault {
         }
       } >>> Server.live
 
-  override def run: Task[Unit] = serverProgram.provide(
+  private val program =
+    ZIO.log("Bootstrapping...") *> runMigrations *> startServer
+
+  override def run: Task[Unit] = program.provide(
     configuredServer,
     // services
     UserServiceLive.layer,
@@ -41,6 +53,7 @@ object Application extends ZIOAppDefault {
     InviteServiceLive.configuredLayer,
     PaymentServiceLive.configuredLayer,
     OpenAIServiceLive.configuredLayer,
+    FlywayServiceLive.configuredLayer,
     // repos
     CompanyRepositoryLive.layer,
     ReviewRepositoryLive.layer,
