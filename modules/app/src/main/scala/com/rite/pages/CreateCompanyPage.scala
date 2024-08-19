@@ -66,9 +66,6 @@ object CreateCompanyPage extends FormPage[CreateCompanyState]("Create company") 
         uid = "company-logo",
         isRequired = false
       ),
-      img(
-        src <-- stateVar.signal.map(_.image.getOrElse(""))
-      ),
       renderInput(
         name = "Location",
         uid = "company-location",
@@ -125,12 +122,19 @@ object CreateCompanyPage extends FormPage[CreateCompanyState]("Create company") 
             if (isRequired) span("*") else span(),
             name
           ),
-          input(
-            `type` := "file",
-            cls    := "form-control",
-            idAttr := uid,
-            accept := "image/*",
-            onChange.mapToFiles --> fileUploader
+          div(
+            cls := "image-upload",
+            input(
+              `type` := "file",
+              cls    := "form-control",
+              idAttr := uid,
+              accept := "image/*",
+              onChange.mapToFiles --> fileUploader
+            ),
+            img(
+              cls := "image-upload-thumbnail",
+              src <-- stateVar.signal.map(_.image.getOrElse(Constants.companyLogoPlaceholder))
+            )
           )
         )
       )

@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS reviews(
     benefits INT NOT NULL,
     would_recommend INT NOT NULL,
     review TEXT NOT NULL,
-    created TIMESTAMP NOT NULL DEFAULT now(),
-    updated TIMESTAMP NOT NULL DEFAULT now()
+    created TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT now(),
+    updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS recovery_tokens(
@@ -54,5 +54,5 @@ CREATE TABLE IF NOT EXISTS invites(
 CREATE TABLE IF NOT EXISTS review_summaries(
     company_id BIGINT NOT NULL PRIMARY KEY,
     contents TEXT,
-    created TIMESTAMP NOT NULL DEFAULT now()
+    created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );

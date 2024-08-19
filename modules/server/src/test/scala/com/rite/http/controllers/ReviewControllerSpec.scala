@@ -12,7 +12,7 @@ import zio.test.*
 import zio.json.*
 
 import java.time.Instant
-import com.rite.domain.data.{Review, User, UserId, UserToken}
+import com.rite.domain.data.*
 import com.rite.http.requests.CreateReviewRequest
 import com.rite.services.{JWTService, ReviewService}
 import com.rite.syntax.*
@@ -74,6 +74,10 @@ object ReviewControllerSpec extends ZIOSpecDefault {
       ZIO.succeed { if (companyId == 1L) List(goodReview) else Nil }
     override def getByUserId(userId: Long): Task[List[Review]] =
       ZIO.succeed { if (userId == 1L) List(goodReview) else Nil }
+    override def getSummary(companyId: Long): Task[Option[ReviewSummary]] =
+      ZIO.none
+    override def makeSummary(companyId: Long): Task[Option[ReviewSummary]] =
+      ZIO.none
   }
 
   override def spec: Spec[TestEnvironment & Scope, Any] =

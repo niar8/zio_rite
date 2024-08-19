@@ -10,7 +10,8 @@ object App {
   private val app = div(
     onMountCallback(_ => Session.loadUserState()),
     Header(),
-    Router()
+    Router(),
+    Footer()
   ).amend(LinkHandler.bind) // for internal links
 
   private val containerNode = dom.document.querySelector("#app")

@@ -20,8 +20,8 @@ object CompanyPage {
         useBackend(_.company.getByIdEndpoint(payload = id.toString)).emitTo(fetchCompanyBus)
       },
       children <-- status.map {
-        case Status.LOADING     => List(div("loading..."))
-        case Status.NOT_FOUND   => List(div("company not found"))
+        case Status.LOADING     => renderLoading
+        case Status.NOT_FOUND   => renderNotFound
         case Status.OK(company) => render(company, reviewsSignal(id))
       }
     )
@@ -44,6 +44,25 @@ object CompanyPage {
         case Some(company) => Status.OK(company)
       }
   }
+
+  private def renderLoading: List[ReactiveHtmlElement[HTMLDivElement]] = List(
+    div(
+      cls := "simple-titled-page",
+      h1("Loading...")
+    )
+  )
+
+  private def renderNotFound: List[ReactiveHtmlElement[HTMLDivElement]] = List(
+    div(
+      cls := "simple-titled-page",
+      h1("Oops!"),
+      h2("This company doesn't exist"),
+      a(
+        href := "/",
+        "Maybe check the list of companies again?"
+      )
+    )
+  )
 
   private def reviewsSignal(companyId: Long): Signal[List[Review]] =
     fetchCompanyBus.events

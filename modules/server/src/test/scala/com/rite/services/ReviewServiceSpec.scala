@@ -1,13 +1,13 @@
 package com.rite.services
 
+import com.rite.config.SummaryConfig
+import com.rite.domain.data.{Review, ReviewSummary}
+import com.rite.http.requests.CreateReviewRequest
+import com.rite.repositories.ReviewRepository
 import zio.*
 import zio.test.*
 
 import java.time.Instant
-import com.rite.domain.data.Review
-import com.rite.http.requests.CreateReviewRequest
-import com.rite.repositories.ReviewRepository
-import com.rite.services.{ReviewService, ReviewServiceLive}
 
 object ReviewServiceSpec extends ZIOSpecDefault {
   private val goodReview = Review(
@@ -38,7 +38,7 @@ object ReviewServiceSpec extends ZIOSpecDefault {
     updated = Instant.now()
   )
 
-  val reviewRepoStub: ULayer[ReviewRepository] = ZLayer.succeed {
+  private val reviewRepoStubLayer: ULayer[ReviewRepository] = ZLayer.succeed {
     new ReviewRepository {
       override def create(review: Review): Task[Review] =
         ZIO.succeed(goodReview)
@@ -60,8 +60,21 @@ object ReviewServiceSpec extends ZIOSpecDefault {
         getById(id).someOrFail(new RuntimeException(s"id $id not found ")).map(op)
       override def delete(id: Long): Task[Review] =
         getById(id).someOrFail(new RuntimeException(s"id $id not found "))
+      override def getSummary(companyId: Long): Task[Option[ReviewSummary]] =
+        ZIO.none
+      override def insertSummary(companyId: Long, summary: String): Task[ReviewSummary] =
+        ZIO.succeed(ReviewSummary(companyId, contents = summary, created = Instant.now))
     }
   }
+
+  private val openaiServiceStubLayer: ULayer[OpenAIService] = ZLayer.succeed {
+    new OpenAIService {
+      override def getCompletion(prompt: String): Task[Option[String]] =
+        ZIO.none
+    }
+  }
+
+  private val summaryConfigLayer = ZLayer.succeed(SummaryConfig(minReviews = 3, nSelected = 20))
 
   override def spec: Spec[TestEnvironment & Scope, Any] =
     suite("ReviewServiceSpec")(
@@ -124,6 +137,8 @@ object ReviewServiceSpec extends ZIOSpecDefault {
       }
     ).provide(
       ReviewServiceLive.layer,
-      reviewRepoStub
+      reviewRepoStubLayer,
+      openaiServiceStubLayer,
+      summaryConfigLayer
     )
 }
