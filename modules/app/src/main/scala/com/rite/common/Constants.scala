@@ -1,7 +1,9 @@
 package com.rite.common
 
+import org.scalajs.dom.window
+
 import scala.scalajs.js.annotation.*
-import scala.scalajs.js
+import scala.scalajs.{js, LinkingInfo}
 
 object Constants {
   @js.native
@@ -17,4 +19,8 @@ object Constants {
 
   val urlRegex: String =
     """^(https?):\/\/(([^:/?#]+)(?::(\d+))?)(\/[^?#]*)?(\?[^#]*)?(#.*)?"""
+
+  val backendBaseUrl: String =
+    if (LinkingInfo.developmentMode) "http://localhost:4041"
+    else window.location.origin
 }

@@ -37,6 +37,11 @@ class EmailServiceLive private (config: EmailServiceConfig) extends EmailService
          |">
          |<h1>RITE Company password recovery</h1>
          |<p>Your password recovery token is: <strong>$token</strong></p>
+         |<p>
+         |  Go
+         |  <a href="${config.baseUrl}/recover"> here </a>
+         |  to reset your password.
+         |</p>
          |</div>
          |""".stripMargin
     sendEmail(to, subject, content)
@@ -56,7 +61,7 @@ class EmailServiceLive private (config: EmailServiceConfig) extends EmailService
          |  <h1>You are invited to review ${company.name}</h1>
          |  <p>
          |    Go to
-         |    <a href="http://localhost:1234/company/${company.id}">this link</a>
+         |    <a href="${config.baseUrl}/company/${company.id}">this link</a>
          |    to add your thoughts on the app. Should take just a minute.
          |  </p>
          |</div>

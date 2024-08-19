@@ -1,5 +1,6 @@
 package com.rite.core
 
+import com.rite.common.Constants
 import com.rite.configs.BackendClientConfig
 import com.rite.http.endpoints.*
 import sttp.capabilities.WebSockets
@@ -83,7 +84,7 @@ object BackendClientLive {
   val configuredLayer: ULayer[BackendClient] = {
     val backend     = FetchZioBackend()
     val interpreter = SttpClientInterpreter()
-    val config      = BackendClientConfig(Some(uri"http://localhost:8080"))
+    val config      = BackendClientConfig(Some(uri"${Constants.backendBaseUrl}"))
     ZLayer.succeed(backend) ++
       ZLayer.succeed(interpreter) ++
       ZLayer.succeed(config) >>> layer
